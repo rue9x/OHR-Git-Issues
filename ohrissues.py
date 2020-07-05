@@ -12,7 +12,7 @@ from html.parser import HTMLParser
 import sys
 
 issues_url = 'https://api.github.com/repos/ohrrpgce/ohrrpgce/issues'
-issues_params = {'state':'open'}
+issues_params = {'state':'open', 'page':'1', 'per_page':'100'}
 issues_headers = {'accept': 'application/vnd.github.squirrel-girl-preview'}
 
 
@@ -73,7 +73,11 @@ def sort_and_prepare_return_final_list(collection,sortmode):
 def get_issues(URL=issues_url,PARAMS=issues_params,HEADERS=issues_headers):
     r = requests.get(url = URL, params = PARAMS, headers=HEADERS) 
     issues_r_data = r.json()
-
+    PARAMS2 = PARAMS
+    del PARAMS["page"]
+    while 'next' in r.links.keys():
+        r = requests.get(r.links['next']['url'],headers=HEADERS,params=PARAMS2)     
+        issues_r_data.extend(r.json())
     return issues_r_data
 
 def dictify_git(issues_r_data):
@@ -117,11 +121,12 @@ def dictify_git(issues_r_data):
         issues_data[str(issue_id)]["score"] = issue_upvotes - issue_downvotes
     return issues_data
 
-def write_csv(final_list: list, writefolder='',writefile='OHR-issues.csv',which_label='bug'):
+def write_csv(final_list: list, writefolder='',writefile='OHR-issues.csv',which_label='bug',quiet_mode=False):
     try:
         with open(writefolder+writefile,'w') as file_out:
             file_out.write("ID,title,up,down,url\n")
-            print ("Wrote headers...")
+            if quiet_mode == False:
+                print ("Wrote headers...")
     except:
         print ("Couldn't write file to "+writefolder+"! Exiting!")
         quit()
@@ -137,10 +142,12 @@ def write_csv(final_list: list, writefolder='',writefile='OHR-issues.csv',which_
                 visit_url = each_line["url"]
                 writedata = f'{issue_id},{title},{upvotes},{downvotes},{visit_url}\n'
                 file_out.write(str(writedata))
-                print ("Wrote "+str(issue_id)+" to "+writefile)
-    print ("Done writing CSV")
+                if quiet_mode == False:
+                    print ("Wrote "+str(issue_id)+" to "+writefile)
+    if quiet_mode == False:
+        print ("Done writing CSV")
 
-def write_html(final_list: list, writefolder='',writefile='ohr-issues.html'):
+def write_html(final_list: list, writefolder='',writefile='ohr-issues.html',quiet_mode=False):
     with open(Path(writefolder+writefile),'w') as file_out:
         style_text = \
             "<style>\n"+\
@@ -160,7 +167,6 @@ def write_html(final_list: list, writefolder='',writefile='ohr-issues.html'):
     with open(Path(writefolder+writefile),'a') as file_out:  
         file_out.write(f"\t<tr id=\"headers\">\n \t\t<td>issue_id</td>\n \t\t<td>title</td>\n \t\t<td>upvotes</td>\n \t\t<td>downvotes</td>\n \t\t<td>url</td>\n</tr>")             
         for each_line in final_list:
-            print (each_line["label"])
             if each_line["label"] == "bug":
                 issue_id = each_line["issue_id"]
                 title = each_line["title"]
@@ -168,12 +174,14 @@ def write_html(final_list: list, writefolder='',writefile='ohr-issues.html'):
                 downvotes = each_line["downvotes"]
                 visit_url = each_line["url"]
                 file_out.write(f"\t<tr id=\"{issue_id}\">\n \t\t<td>{issue_id}</td>\n \t\t<td>{title}</td>\n \t\t<td>{upvotes}</td>\n \t\t<td>{downvotes}</td>\n \t\t<td><a href=\"{visit_url}\" target=\"_blank\">{visit_url}</a></td>\n</tr>")
-                print ("Wrote "+str(issue_id))
+                if quiet_mode == False: 
+                    print ("Wrote "+str(issue_id)+" to issues table")
         file_out.write("</table>\n\n")
                 
         file_out.write("\n<h2> Features </h2> \n <table id=\"feature_table\" width=\"1000px\">\n")
         file_out.write(f"\t<tr id=\"headers\">\n \t\t<td>issue_id</td>\n \t\t<td>title</td>\n \t\t<td>upvotes</td>\n \t\t<td>downvotes</td>\n \t\t<td>url</td>\n</tr>")             
-        
+        if quiet_mode == False: 
+            print ("\n")
         for each_line in final_list:
             if each_line["label"] == "new_feature":
                 issue_id = each_line["issue_id"]
@@ -182,40 +190,54 @@ def write_html(final_list: list, writefolder='',writefile='ohr-issues.html'):
                 downvotes = each_line["downvotes"]
                 visit_url = each_line["url"]
                 file_out.write(f"\t<tr id=\"{issue_id}\">\n \t\t<td>{issue_id}</td>\n \t\t<td>{title}</td>\n \t\t<td>{upvotes}</td>\n \t\t<td>{downvotes}</td>\n \t\t<td><a href=\"{visit_url}\" target=\"_blank\">{visit_url}</a></td>\n</tr>")
-                print ("Wrote "+str(issue_id))
+                if quiet_mode == False:
+                    print ("Wrote "+str(issue_id)+" to features table")
         file_out.write("</table>\n</body>")
-        
-def main(fn,sortmode,outputtype):
+        if quiet_mode == False:
+            print ("Done writing HTML")
+
+def main(fn,sortmode,outputtype,quiet_mode=False):
     git_data = get_issues()
     issues_dict = dictify_git(git_data)
     issues_sorted_dict_list = list()
     issues_sorted_dict_list = sort_and_prepare_return_final_list(issues_dict,sortmode)
     if outputtype == "html":
-        write_html(issues_sorted_dict_list,'',fn)
+        write_html(issues_sorted_dict_list,'',fn,quiet_mode)
     if outputtype == "csv":
         fn2 = fn
         fn2 = fn.replace(".csv","-features.csv")
-        write_csv(issues_sorted_dict_list,'',fn,"bug") # Bug to filter only labels with 'bug'
-        write_csv(issues_sorted_dict_list,'',fn2,"feature") # Feature to get 'feature' requests.
+        write_csv(issues_sorted_dict_list,'',fn,"bug",quiet_mode) # Bug to filter only labels with 'bug'
+        write_csv(issues_sorted_dict_list,'',fn2,"feature",quiet_mode) # Feature to get 'feature' requests.
 
 def show_help():
     print ("\n")
-    print ("Syntax: python3 "+__file__+" path_and_filename sortmode html/csv")
-    print ("Where 'path_and_filename is windows or linux friendly folder structure with write access, with a file ending in CSV or HTML")
+    print ("Syntax: python3 "+__file__+" path_and_filename sortmode")
+    print ("Where 'path_and_filename is windows or linux friendly folder structure with write access.")
+    print ("The filename must end in .csv or .html!")
     print ("Where sortmode is any of the following: ")
     print ("highest_score, lowest_score")
     print("most_upvotes,least_upvotes")
     print("most_downvotes,least_downvotes")
-    print ("Where html/csv is html OR csv")
+    print ("\n")
     print ("Note: CSV mode has 2 output files. One will be your original filename. The second is your filename with '-features' appended to it for the feature requests.")
+    print ("Note: You may also optionally use the -q argument to enter 'quiet' mode, only displaying errors.")
     print ("\n")
     quit()
 
 try:
-    if os.path.exists(os.path.dirname(sys.argv[1])) == False or len(sys.argv) < 4:
+    if os.path.exists(os.path.dirname(sys.argv[1])) == False or len(sys.argv) < 3:
         show_help()
         quit()
     else:
+        fn = sys.argv[1]
+        if fn[-4:] == ".csv":
+            outputtype = "csv"
+        elif fn[-5:] == ".html":
+            outputtype = "html"
+        else:
+            print ("Output file must be .csv or .html.")
+            show_help()
+            quit()
         fnOK = True
 except:
     show_help()
@@ -223,7 +245,6 @@ except:
 
 fn = sys.argv[1]
 sortmode = sys.argv[2]
-outputtype = sys.argv[3]
 
 acceptable_sortmodes = [
     'highest_score',
@@ -233,26 +254,15 @@ acceptable_sortmodes = [
     'most_downvotes',
     'least_downvotes'
 ]
-print (sortmode in acceptable_sortmodes)
-if outputtype == "csv" or outputtype == "html":
-    if outputtype == "csv":
-        if fn[-4:] == ".csv":
-            outputOK = True
-        else:
-            print ("Output isn't a csv file.")
-            show_help()
-            quit()
-    if outputtype == "html":
-        if fn[-5:] == ".html":
-            outputOK = True
-        else:
-            print ("Output isn't a html file.")
-            show_help()
-            quit()
 
 if sortmode in acceptable_sortmodes: 
     sortOK = True
 
-if fnOK == True and outputOK == True and sortOK == True:
-    print ("gooo")
-    main(fn,sortmode,outputtype)
+if fnOK == True and sortOK == True:
+    if "-q" in sys.argv:
+        main(fn,sortmode,outputtype,quiet_mode=True)
+    else:
+        main(fn,sortmode,outputtype,quiet_mode=False)
+else:
+    show_help()
+    quit()
