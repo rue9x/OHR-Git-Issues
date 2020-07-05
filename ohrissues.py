@@ -224,24 +224,32 @@ def show_help():
     print ("\n")
     quit()
 
-try:
-    if os.path.exists(os.path.dirname(sys.argv[1])) == False or len(sys.argv) < 3:
-        show_help()
-        quit()
-    else:
-        fn = sys.argv[1]
-        if fn[-4:] == ".csv":
-            outputtype = "csv"
-        elif fn[-5:] == ".html":
-            outputtype = "html"
-        else:
-            print ("Output file must be .csv or .html.")
-            show_help()
-            quit()
-        fnOK = True
-except:
+fnOK = False
+sortOK = False
+
+if (len(sys.argv) < 3):
     show_help()
     quit()
+
+if (len(sys.argv) < 2):
+    show_help()
+    quit()
+
+if os.path.exists(os.path.dirname(sys.argv[1])) == False:
+    show_help()
+    quit()
+else:
+    fn = sys.argv[1]
+    if fn[-4:] == ".csv":
+        outputtype = "csv"
+    elif fn[-5:] == ".html":
+        outputtype = "html"
+    else:
+        print ("Output file must be .csv or .html.")
+        show_help()
+        quit()
+    fnOK = True
+
 
 fn = sys.argv[1]
 sortmode = sys.argv[2]
