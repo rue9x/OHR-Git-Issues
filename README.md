@@ -22,4 +22,4 @@ Where html/csv is html OR csv
 Note: CSV mode has 2 output files. One will be your original filename. The second is your filename with '-features' appended to it for the feature requests.
 
 
-This is intended for use with the OHRRPGCE (Official Hamster Republic Role Play Game Creation Engine) Github account to better track their +1 and -1 issues for prioritization. If you would like to use it with your project, that's totally okay! Drop me a line if you make any cool or meaningful changes.
+This is intended for use with the OHRRPGCE (Official Hamster Republic Role Play Game Creation Engine) (http://gilgameshhamsterrepublic.com/ohrrpgce) Github account to better track their +1 and -1 issues for prioritization. If you would like to use it with your project, that's totally okay! Drop me a line if you make any cool or meaningful changes.
