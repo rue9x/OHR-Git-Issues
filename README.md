@@ -5,7 +5,7 @@ Rue Lazzaro 7/4/2020
 
 This uses the requests library to call out to the github API to gather issues information for the OHRRPGCE engine. An internet connection is required, as well as Python 3.
 
-Syntax: python3 ohrissues.py path_and_filename sortmode html/csv
+Syntax: python3 ohrissues.py path_and_filename sortmode
 
 Where 'path_and_filename is windows or linux friendly folder structure with write access, with a file ending in CSV or HTML
 
@@ -16,8 +16,6 @@ highest_score, lowest_score
 most_upvotes,least_upvotes
 
 most_downvotes,least_downvotes
-
-Where html/csv is html OR csv
 
 Note: CSV mode has 2 output files. One will be your original filename. The second is your filename with '-features' appended to it for the feature requests.
 
